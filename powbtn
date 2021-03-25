@@ -1,0 +1,34 @@
+#! /bin/bash
+
+answer=$(xmessage -center -print -timeout 45 -buttons LOGOUT:2,SHUTDOWN:3,HIBERNATE:4,CANCEL:5 -default LOGOUT "Checkout options, pick one:")
+
+echo user: $answer
+
+case $answer in
+	LOGOUT)
+	echo "Logging out"
+	# LOGOUT
+	killall -QUIT fluxbox
+	;;
+	SHUTDOWN)
+	echo "Shutting down"
+	# SHUTDOWN
+	sync && halt
+	;;
+	HIBERNATE)
+	echo "Entering hibernation"
+	# HIBERNATE
+	sudo /usr/local/sbin/sws
+	;;
+	CANCEL)
+	echo canceled
+	exit
+	;;
+	*)
+	echo Not possible to get an answer
+	exit 2
+esac
+
+
+
+
