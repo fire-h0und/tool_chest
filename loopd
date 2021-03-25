@@ -1,0 +1,29 @@
+
+Maintain=$1
+Expect=${2:-init}
+
+waste () {
+  for (( n= 0 ; n < 5 ; n++ )) {
+    sleep 1
+    echo -ne "."
+  }
+}
+
+if [ "X$Maintain" == "X" ]; then
+ echo "Usage $ loopd {maintain} [expect]"
+ exit 1
+fi
+
+echo -ne "Checking for ${Expect}\n"
+until pgrep ${Expect} 1> /dev/null ; do
+  echo -ne "\r             \rWaiting"
+  waste
+done
+
+while true; do
+  ${Maintain}
+  echo -ne "\r                    \rExited, pausing"
+  waste
+done
+
+echo "Done"
