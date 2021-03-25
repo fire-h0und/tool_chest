@@ -1,0 +1,20 @@
+#!/bin/sh
+
+l1='# added for /sur/bin/m utility'
+l2='%users  ALL= NOPASSWD: /sbin/mount,/sbin/umount'
+tgt='/etc/sudoers'
+x=0
+
+echo "m setup in progress..."
+grep -v "#" $tgt | grep "${l2}"
+
+  if !( grep -q "${l1}" $tgt ) ; then
+    echo 'not found, adding line!'
+    echo >> $tgt
+    echo $l1 >> $tgt
+    echo $l2 >> $tgt
+  else
+    echo 'checked line exists already!'
+  fi
+
+
