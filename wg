@@ -1,0 +1,86 @@
+#!/bin/sh
+#
+# (ICS) SCerovec & bassmadrigal on linuxquestions.org
+#
+#
+# changelog:
+#
+# development started by bassmadrigal
+# shift_bugfix and enhanced parameter evaluation by SCerovec
+#
+A=$1
+B=$2
+
+version()
+{
+  echo "Version 0.2-alpha"
+}
+
+howto()
+{
+cat <<EOF
+list (20?) largest installed packages
+
+wg stands for Which Goes ?
+parameters :
+  -h     :get therse usage instructions
+  --help
+  -u
+  --usage
+
+  number :list this much packages, if omitted
+          defaults to 20
+
+  regexp :GNU regular expression evaluated by
+          grep to filer out packages of
+          interest
+
+ Parameters will be accepted in any order:
+ wg 12 SBo
+ wg alien 15   -both will work properly.
+EOF
+}
+
+doit()
+{
+  grep "UNCOMPRESSED " /var/log/packages/* \
+        | grep "${G}" \
+        | sed -e s/"\/.*\/"/":"/g \
+        | awk -F: '{print $4 " / " $2}' \
+        | sort -b -h -r \
+        | head -n $N
+}
+
+# empty parameters?
+if [ "X${A}${B}" == "X" ];then
+  #defaults
+   N=20
+   G=.
+else
+  # non numeric vars evaluate to 0
+  # and upon increment are equal to 1
+  # as well as any number less than 1
+  if (( +A > 1 )) ; then
+    # 1st is numeric
+    N=${A:-20}
+    G=${B:-.}
+  elif (( +B > 1 )) ; then
+    # 2nd is numeric
+    G=${A:-.}
+    N=${B:-20}
+  else
+    #none gnumeric O.o ?
+    N=20
+    G="${@}"
+  fi
+fi
+
+case "$1" in
+  -h|--help|-u|--usage)
+     howto ;;
+  -v|--version)
+     version ;;
+   *)
+     doit ;;
+esac
+
