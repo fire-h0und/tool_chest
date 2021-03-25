@@ -1,0 +1,27 @@
+#! /bin/bash
+
+#
+# the colors for output
+#
+# GPL v3 (2007-2010) cest73@gmail.com
+#
+        _end="\033[0m"
+  _dark_gray="\033[1;30m"
+        _red="\033[1;31m"
+      _green="\033[1;32m"
+     _yellow="\033[1;33m"
+       _blue="\033[1;34m"
+     _purple="\033[1;35m"
+       _cyan="\033[1;36m"
+      _white="\033[1;37m"
+      _black="\033[0;30m"
+   _dark_red="\033[0;31m"
+ _dark_green="\033[0;32m"
+     _orange="\033[0;33m"
+  _dark_blue="\033[0;34m"
+     _violet="\033[0;35m"
+  _dark_cyan="\033[0;36m"
+       _gray="\033[0;37m"
+
+#EXAMPLE:
+# echo -e $_white"test"$_end
