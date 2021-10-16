@@ -1,5 +1,5 @@
 #!/bin/sh
-V="0.2-rc1"
+V="0.3-rc1"
 echo -ne ".\n.\n.\n."
 echo "   BOOT UPDATER-"$V
 echo "========================================"
@@ -19,29 +19,33 @@ for X in /usr/sbin/grub-mkconfig /sbin/mkinitrd
     exit 2
   fi
 done
-
+#default EFI path:
+efi_path="/boot/efi/EFI/Slackware"
+boot_path="/boot"
 rk=$(uname -r)
 echo "And we seem to be running on $rk kernel"
 echo "========================================"
 
+#TODO:
+# check for other bootloaders too
+
 #loop over the symlinks in /boot/
-for k in /boot/vmlinuz*
+for k in $boot_path/$vmlinuz*
 do
   #echo $k; file -b $k
-  if file -b $k | grep -q "symbolic link"
-    then echo "we have detected an symlink, skippin the symlink"
-  fi
+#  if file -b $k | grep -q "symbolic link"
+#    then echo "skipping the symlink (${k})"
+#  fi
   if file -b $k | grep -q "Linux kernel"
-    then echo "we have detected an kernel:"
+    then echo "we have detected an kernel image:"
     s=${k#*-}
     v=${s#*-}
     t=${s%-*}
     echo "it is an " $t "version" $v
     if [ "X"$t == "Xgeneric" ]
       then
-      echo "does the -generic we're just detected need some maintainence:"
-      #check if initrd is needed!
-      for i in /boot/initrd-$v*
+      echo "checking if the -generic needs any maintainence:"
+      for i in $boot_path/initrd-$v*
       do
         if ( file -b $i | grep -q "data" )
           then
@@ -52,7 +56,7 @@ do
               do
               if [ "X"$kv == "X"$v ] && [ "X"$kv != "X" ]
                 then
-                echo "initrd seems to be configured already"
+                echo "initrd seems to be configured already."
                 else
                 echo "editing /etc/mkinitrd.conf!"
                 #do it!
@@ -66,16 +70,34 @@ do
             #we have appropriate mkintrd.conf now on
             #proceed to make a initrd for the orphan -generic kernel
             /sbin/mkinitrd -F
+            new_initrd="${boot_path}/initrd-${v}.gz"
+            ####
+            cp -vu $new_initrd $efi_path
           fi
       done
     fi
+    new_kernel="${boot_path}/vmlinuz-${s}"
+    cp -vu $new_kernel $efi_path
+    echo "done processing ${new_kernel} kernel."
     #not an -generic, no further action needed
   fi
   #not a krenel, but a symlink, no action needed
 done
-#letting grup ovedo the config file now:
 
-/usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg
+#TODO:
+#
+# check if grub, elilo or other supported bootloader is in use:
+#
+
+#letting grup overdo the config file now:
+echo /usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg
+
+# preparing for UEFI bootloader 
+# (by copying over the initrd and vmlinuz image)
+
+echo "Please edit the elilo conf fille accordingly"
+
+
 # here on we check if there is an binary nvidia blob installed:
 echo "========================================"
 nv_i=$(which nvidia-installer)
