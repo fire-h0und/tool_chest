@@ -4,7 +4,7 @@ version=0.3
 echo "Audio file converter version V${version}"
 echo "frontend for mplayer from MplayerHQ.hu"
 
-for TYPE in "wav" "ogg" "m4a" "avi" "mp4" "flv" "mpc"
+for TYPE in "wav" "ogg" "m4a" "avi" "mp4" "flv" "mpc" "webm"
   {
   echo "=====================testing [$TYPE] files:================================"
   for FILE in *.$TYPE
