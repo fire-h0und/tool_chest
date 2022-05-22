@@ -1,6 +1,6 @@
 #!/bin/bash
 
-version=0.3
+version=0.4
 echo "Audio file converter version V${version}"
 echo "frontend for mplayer from MplayerHQ.hu"
 
