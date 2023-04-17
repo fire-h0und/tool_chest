@@ -1,0 +1,39 @@
+#!/bin/sh
+
+#wrapper for editing /boot.src
+# ISC apply - support on Linuxquestions.org for Slackware ARM
+# author: cest73@ya.ru
+# version V1.2
+# file /usr/local/sbin/bootedit
+#
+
+Editor="$(which vi)"
+Converter="$(which mkimage)"
+pars='-vC none -A arm -T script'
+tgt='boot.scr'
+src='boot.cmd'
+bootdir='/boot'
+
+if [[ -d $bootdir ]]; then
+  cd $bootdir
+else
+  echo "Wrong (?) bootdir defined, aborting!"
+  exit 2
+fi
+
+if [[ -x ${Editor} ]] ; then
+if [[ -x ${Converter} ]] ; then
+ if $Editor ${src}
+   then echo "$Converter ${pars} -d ${src} ${tgt}"
+   $Converter ${pars} -d ${src} ${tgt}
+ fi
+else
+echo "converter [${Converter}] not found! aborting."
+exit 2
+fi
+else
+echo "editor [${Editor}] not found! aborting."
+exit 2
+fi
+echo "done."
+
