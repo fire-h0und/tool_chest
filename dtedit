@@ -1,0 +1,64 @@
+
+#!/bin/bash
+
+# cest73@ya.ru under ISC license for Slackware-current 2017 onward
+#
+#EDITOR="/usr/bin/mcedit -S gotar" # gotar is a skin of mc ;-)
+EDITOR="/usr/bin/vi"
+
+filter=$1
+
+case $filter in
+"-h"|*usage|*help|"-?")
+  echo "Usage:"
+  echo "dtedit [regexp]"
+  echo
+  echo "Edit one of the dts files as dtb and store back as dts"
+  echo "Filer the list with optional [regexp] like 'sun8' or 'zero'"
+  echo "without quotes:"
+  echo
+  echo "dtedit zero"
+  echo "help keys: '-?','-h','--help','usage'"
+  echo "happy hacking!"
+  exit 0
+esac
+#we rely on symlink here:
+kver="dtb/rockchip"
+
+dt_path='/boot'
+
+cd $dt_path
+
+configs=$(ls ${kver} | grep ".dtb" | grep "${filter}" | awk -F.dtb '{print $1 " " $1 }')
+
+if [[ "X$configs" == "X" ]]; then
+  echo "filter ["$filter"], you provided, yileded no results in ["$dt_path"/"$kver"/*.dtb]."
+  echo "Please retry."
+  exit 2
+fi
+
+dialog --backtitle "Board selection list, cancel to abort" --no-tags --menu "Boards to pick from:" 0 0 12 ${configs} 2>/dev/shm/result
+
+selection=$(cat /dev/shm/result)
+echo "our target is: ["$selection"]"
+
+if [[ "X$selection" == "X" ]]; then
+  echo "exiting due to user cancels"
+  exit 1
+fi
+
+dtb_file="${dt_path}/${kver}/${selection}.dtb"
+back_file="${dt_path}/${kver}/${selection}.dtb.orig"
+dts_file="${dt_path}/${kver}/${selection}.dts"
+edited_file="/tmp/${selection}.dts"
+
+ls $dtb_file
+rm -v $dts_file
+rm -v $edited_file
+
+dtc -W no-unit_address_vs_reg -I dtb -O dts $dtb_file -o $edited_file
+
+$EDITOR $edited_file
+
+dtc -W no-unit_address_vs_reg -O dtb -I dts $edited_file -o $dtb_file
+
