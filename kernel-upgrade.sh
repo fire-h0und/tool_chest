@@ -1,5 +1,13 @@
 #!/bin/sh
-V="0.4-rc1"
+V="0.5-rc1"
+
+# changelog:
+# ==============
+# 0.5
+# * - added upgrading the driver along with kernel module with sbottools
+# TODO check for exact nvidia driver version prior to updating
+#      and optionally ask user to pick the right one
+
 echo -ne ".\n.\n.\n."
 echo "   BOOT UPDATER-"$V
 echo "========================================"
@@ -32,6 +40,8 @@ if [[ -x /usr/sbin/sboinstall ]]
   {
   True
   }
+  echo "Refreshing sbo-tools cache just in case: (stand by please)..."
+  /usr/sbin/sbocheck
 else
   echo "-couldn't detect sbotools"
 fi
@@ -110,10 +120,15 @@ echo "========================================"
 if [[ -x $nv_i ]]
   then
   echo "NVidia blob is present!"
+  ##TODO detect if version is good or not
+  #in grep -E "nvidia-kernel|nvidia-driver" /var/log/sbocheck.log
+  # and check if any and wich legacy driver is used
+  # currently we blindly steamroll with the default package
   if $sbo_t
     then
     #try let sbotools handle the Nvidia blob
-    KERNEL=$v $sbo_i --reinstall -R -r nvidia-kernel
+    #(-driver and -kernel are split across two packages)
+    KERNEL=$v $sbo_i --reinstall -R -r nvidia-kernel && KERNEL=$v $sbo_i --reinstall -R -r nvidia-driver
     # --reinstall    rebuild a package even if present (our case here)
     # -R perfrom no dependency resolution
     # -r skip interaction with the user
