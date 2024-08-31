@@ -1,5 +1,5 @@
 #!/bin/sh
-V="0.5-rc1"
+V="0.6-rc2"
 
 # changelog:
 # ==============
@@ -15,8 +15,12 @@ echo "adjusting boot to upgraded kernel"
 echo "NOTE: this is just a helper, ensure that all the files are"
 echo "properly configured beforehand!"
 echo "========================================"
+boottech=$([ -d /sys/firmware/efi ] && echo UEFI || echo BIOS)
+
+echo "Boot technology [${boottech}] detected."
+
 # checking for mandatory components:
-for X in /usr/sbin/grub-mkconfig /sbin/mkinitrd
+for X in /sbin/mkinitrd /sbin/blkid /usr/sbin/efibootmgr 
   do
   if [[ -x $X ]]
     then
@@ -27,10 +31,59 @@ for X in /usr/sbin/grub-mkconfig /sbin/mkinitrd
     exit 2
   fi
 done
+
+bootorder=$(/usr/sbin/efibootmgr | grep "BootOrder:" | sed "s/BootOrder://" )
+bootloader=$(/usr/sbin/efibootmgr | grep "BootOrder:" | sed "s/BootOrder://" | awk -F',' '{print $1}' | sed "s/ //g" )
+bootentry=$(/usr/sbin/efibootmgr | grep "Boot${bootloader}" )
+bootpath=$(/usr/sbin/efibootmgr | grep "Boot${bootloader}" | awk -F'\t' '{print $2}')
+bootpartition=$(/sbin/blkid | grep $(/usr/sbin/efibootmgr | grep "Boot${bootloader}" | awk -F'\t' '{print $2}' | awk -F',' '{print $3}') | awk -F':' '{print $1}' )
+mountpoint=$(grep $bootpartition /etc/mtab | awk '{print $2}' )
+bootfile=$(/usr/sbin/efibootmgr | grep "Boot${bootloader}" | awk -F'/' '{print $2}' | sed -e "s/File(//" -e "s/)//" -e 's/\\/\//g' )
+
+
+if echo $bootfile | grep "refind_x64.efi"; then 
+bootmanager="refind" 
+fi
+if echo $bootfile | grep "elilo.efi"; then 
+bootmanager="elilo" 
+fi
+if echo $bootfile | grep "grubx64.efi"; then 
+bootmanager="grub" 
+fi
+if echo $bootfile | grep -I "bootx64.efi"; then 
+bootmanager="unknown" 
+fi
+
+case $bootmanager in
+  "grub")
+     -o /boot/grub/grub.cfg
+  if [[ -x /usr/sbin/grub-mkconfig ]]; then
+    echo "[/usr/sbin/grub-mkconfig] detected."
+  else
+    echo "[/usr/sbin/grub-mkconfig] not found, make sure it is installed."
+    echo "-Fatal error, exiting."
+    exit 2
+  fi
+  ;;
+  "refind")
+  if [[ -x /usr/sbin/refind-install ]]; then
+    echo "[/usr/sbin/refind-install] detected."
+  else
+    echo "[/usr/sbin/refind-install] not found, make sure it is installed."
+    echo "-Fatal error, exiting."
+    exit 2
+  fi
+  ;;
+  "elilo")
+  echo "Sorry, [elilo] not implemented yet!"
+  ;;
+  *)
+  echo "Sorry, not implemented yet!"
+esac
+
+
 #TODO:
-# add bootloader discrimination
-# add support for elilo and refind
-# add suppport for sbopkg
+# add support for elilo
 
 if [[ -x /usr/sbin/sboinstall ]]
   then
@@ -40,8 +93,8 @@ if [[ -x /usr/sbin/sboinstall ]]
   {
   True
   }
-  echo "Refreshing sbo-tools cache just in case: (stand by please)..."
-  /usr/sbin/sbocheck
+  #echo "Refreshing sbo-tools cache just in case: (stand by please)..."
+  #/usr/sbin/sbocheck
 else
   echo "-couldn't detect sbotools"
 fi
@@ -104,17 +157,54 @@ echo "========================================"
 echo "Setting up boot loader:"
 echo "========================================"
 
-#
-#
-#
+case $bootmanager in
+  "grub")
+    echo "processing for grub:"
+    /usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg
+  ;;
+  "refind")
+  conffile=$(echo $mountpoint$bootfile | sed 's/refind_x64.efi/refind.conf/' )
+    echo "processing for rEFInd [${conffile}] and [${rk}]>[$v]:"
+    erk=$(echo $rk | sed 's/\./\\./g' )
+    ev=$(echo $v | sed 's/\./\\./g' )
 
-/usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg
+    grep "$rk" $conffile
 
+    # find the recent kernels boot entry
+    oldkernelline=$( grep "vmlinuz-" $conffile | grep "$rk" )
+    eoldkernelline=$( echo "${oldkernelline}" | sed 's/\//\\\//g')
+    echo -n "[${oldkernelline}]>"
+    if [ "X${oldkernelline}" != "X" ]; then
+      newkernelline=$( echo "$oldkernelline" | sed "s/${erk}/${ev}/" )
+      enewkernelline=$( echo "${newkernelline}" | sed 's/\//\\\//g')
+      echo "[${newkernelline}]"
+      # edit in place to match the new kernel
+      sed -i'.backup' "s/${eoldkernelline}/${enewkernelline}/" $conffile
+    fi
+    oldinitrdline=$( grep "initrd-" $conffile | grep "$rk" )
+    eoldinitrdline=$( echo "${oldinitrdline}" | sed 's/\//\\\//g')
+    echo -n "[${oldinitrdline}]>"
+    if [ "X${oldinitrdline}" != "X" ]; then
+      newinitrdline=$( echo "$oldinitrdline" | sed "s/${erk}/${ev}/" )
+      enewinitrdline=$( echo "${newinitrdline}" | sed 's/\//\\\//g')
+      echo "[${newinitrdline}]"
+      # edit in place to match the new kernel
+      sed -i'.backup' "s/${eoldinitrdline}/${enewinitrdline}/" $conffile
+    fi
+    grep "$v" $conffile
+  ;;
+  *)
+  echo "Sorry, processing for this not implemented yet!"
+esac
 
 # here on we check if there is an binary nvidia blob installed:
 echo "========================================"
-nv_i=$(which nvidia-installer)
-echo "found:[${nv_i}]"
+if locate nvidia-installer | grep "bin/"; then
+  nv_i=$(which nvidia-installer)
+  echo "found:[${nv_i}]"
+else
+  echo "no NVidia blob detected."
+fi
 echo "========================================"
 
 if [[ -x $nv_i ]]
@@ -155,7 +245,4 @@ if [[ -x $nv_i ]]
         $nv_i -K -k ${k_v}
       fi
     fi
-else
-  echo "no NVidia blob detected."
 fi
-
