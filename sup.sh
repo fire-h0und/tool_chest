@@ -31,7 +31,7 @@ fi
 
 dialog --backtitle "SUP - System Update Processor" --title "Operatios" --separator "" \
 --item-help --nocancel --ok-label "Process" --no-tags --checklist "Tap [esc] twice to abort." 13 40 6 \
-e editor on "Change the editor used to modify lists and exit" \
+e editor 0 "Change the editor used to modify lists and exit" \
 g greylist 0 "Change what is not selected" \
 b blacklist 0 "Change what is not listed" \
 i install-new on "Select to install any newly added packages" \
