@@ -1,3 +1,25 @@
 #! /bin/sh
 
-sh -c 'while fortune -s | col -x | xmessage -center -buttons OK:1,Another:0 -default OK -file - ; do :; done'
+xmes() {
+    sh -c 'while fortune -s | \
+       col -x | \
+       xmessage -center -buttons Done:1,Another:0 -default Done -file - ; \
+       do :; \
+       done'
+   }
+
+zeni() {
+    sh -c 'while fortune -s | \
+       col -x | \
+       zenity --info --text "$(fortune -s | col -x)" --icon org.xfce.ristretto --title "Fortune Cookie:" --ok-label="Another" --extra-button="Enough" ; \
+       do :; \
+       done'
+   }
+
+# We go from exotic toward commonplace options:
+if [[ -x `which zenity` ]]; then
+    zeni ; exit 0
+fi
+if [[ -x `which xmessage` ]]; then
+    xmes ; exit 0
+fi
