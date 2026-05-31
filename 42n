@@ -16,9 +16,21 @@ zeni() {
        done'
    }
 
+kded() {
+    sh -c `while kdialog \
+       --icon "face-wink" --title "Fortune" \
+       --no-label "Enough" --yes-label "Another" \
+       --warningyesno "$(fortune)"; \
+       do :; \
+       done`
+   }
+
 # We go from exotic toward commonplace options:
 if [[ -x `which zenity` ]]; then
     zeni ; exit 0
+fi
+if [[ -x `which kdialog` ]]; then
+    kded ; exit 0
 fi
 if [[ -x `which xmessage` ]]; then
     xmes ; exit 0
