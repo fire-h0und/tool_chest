@@ -24,7 +24,7 @@ list (20?) largest installed packages
 
 ${0##*/} stands for whatever :-J
 parameters :
-  -h     :get therse usage instructions
+  -h     :get terse usage instructions
   --help
   -u
   --usage
