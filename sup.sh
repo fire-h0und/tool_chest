@@ -14,7 +14,7 @@ dialog --backtitle "SUP - System Update Processor" --title "Operations" --separa
 i install-new on "Select to install any newly added packages" \
 u upgrade-all on "Select to upgrade any installed packages" \
 k "upgrade kernel" on "Upgrade kernel" \
-c clean-system on "Select to remove any orphaned packages" 2> /tmp/task1.bin
+c clean-system on "Select to remove any orphaned packages" 2> /tmp/task.bin
 rep1=$(cat /tmp/task.bin)
 #echo $rep1
 
